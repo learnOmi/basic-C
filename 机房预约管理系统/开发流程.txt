@@ -1,0 +1,173 @@
+画出思维导图
+
+框架搭建：
+
+1.机房预约管理系统中先写了main函数中的菜单功能框架
+
+2.Identity.h中写了身份基类Identity及公共属性、功能接口
+
+3.分别写子类的功能接口及空实现(Student、Teacher、Administrator)（.h和.cpp）,以及构造函数内成员变量的初始化
+
+4.创建文件分类头文件GlobalFile.h (管理员、教师、学生；机房信息、订单信息)
+
+
+功能实现：
+
+1.
+
+SystemManageClass.h写功能管理类,SystemManageClass.cpp实现：
+
+	加入Login功能：
+		接受键盘输入用户类型，以及根据switch case选择出的应该操作的文件名
+		打开对应的记录文件，判断是否打开成功
+		教师和学生需要输入id，管理员不用id；所有用户都需要输入用户名和密码
+		判断是否存在该用户，学生和教师需要判断三个字段，管理员只判断两个字段
+		登录成功后用不同的管理子菜单的函数调用不同子类的showMenu，并且该函数管理运行子菜单的功能
+
+
+
+2.
+
+Adminstrator.h及cpp中实现具体的子菜单及功能
+
+	Administrator 有参构造函数中初始化用户名和密码
+
+
+3.
+
+SystemManageClass 头文件和cpp：
+	
+	加入管理员子菜单——managerSonMenu的功能：
+		Login中调用，传入Identity*类型的指针，该指针调用子类的showMenu
+		接收用户的输入，分别调用Administrator类中不同的功能接口（额外加一个注销功能——清空父类指针指向的堆区，并且return出去，而这个就相当于是跳出了子菜单功能界面的循环，回到了主菜单的功能循环之中）
+	
+	写好学生和老师的子菜单管理接口（studentSonMenu和teacherSonMenu）,日后的实现结构也基本一致
+
+4.
+
+Administrator.cpp中实现：
+	
+	showMenu()
+		略
+
+	addUser()
+		根据用户的输入的类型判断是添加学生还是老师的账号，从而确定不同的操作文件，并且调用isExisted()判断是否已经存在相同id的学生或者老师
+		将id、username、pwd保存到文件中
+		然后调用Initvector()更新容器
+
+	Initvector()
+		从Tech_File.txt和Stud_File.txt中读入记录，保存到Administrator中对应的容器vector<Student>和vector<Teacher>中，方便下面这个函数判断
+
+	isExisted()
+		通过id和用户的输入类型判断是否已经存在用户记录（Administrator 中的两个容器）了
+
+	showUser()
+		根据用户选择，从容器中输出学生或者教师的记录
+
+
+5.
+
+写ComputerRoom类
+	
+	两个成员变量：房间号和可用机器的数量
+
+6.
+
+Administrator类
+	
+	加入vComp容器，读入文件（文件中需要手动输入一些信息，当然日后也可以如同Student一样在Administrator类中添加对机房的增删改）中的电脑房信息，Administrator::Initvector()中加入初始化vComp的代码
+	
+	实现showComp()
+		遍历vComp容器
+	
+	实现ClearOrder()
+		trunc方式打开Order_File.txt
+
+
+7.
+
+Student类
+	
+	showMenu()
+		和Administrator::showMenu()结构一样
+
+8.
+
+SystemManageClass类
+	
+	实现学生子菜单管理——studentSonMenu()
+		调用Student里的功能接口
+
+
+9.
+
+Student类
+	
+	添加vComp容器存放机房记录
+	
+	添加InitVector()函数读入机房记录初始化vComp
+	
+	实现applyOrder()
+		让用户选择星期、时间段以及机房编号
+		将这条选择记录以确定的格式存放到Order_File.txt文件中
+
+
+10.
+
+新增OrderFileManager类，管理预约信息
+	
+	以order_num记录记录数，以map<int,map<string,string>> mOrder_Record容器存储每条记录
+
+	实现OrderFileManager()构造函数
+		调用 this->InitMap()
+
+	实现InitMap()
+		读入Order_File.txt，并且调用split(string,map<string,string>)以“：”分割每一次获取的字符串，分别作为key和val插入临时的map<string,string> m中
+		以order_num和m分别作为key和val插入mOrder_Record容器中
+
+	实现split(string,map<string,string>)
+		使用string容器中的find和substr分割
+
+	实现updateOrder()
+		判断当前是否有记录
+		将mOrder_Record容器中被其他函数更改的记录按格式输出到文件
+		调用InitMap()
+
+
+11.
+
+Student类
+	
+	实现showMyOrder
+		创建OrderFileManager类的对象，判断是否有预约记录
+		从mOrder_Recorder容器中查找和自身id相等的记录，按输出格式输出
+
+	实现show_all_Order
+		基本的逻辑和showMyOrder一样，只是不再判断是否和自身id相等才输出
+
+	实现CancelOrder
+		创建创建OrderFileManager类的对象orf，判断是否有预约记录
+		从从mOrder_Recorder容器中查找和自身id相等的，并且满足status为1或者2的记录，记录下这些记录位于mOrder_Recorder容器中的位置，输出这些记录（注意位序和位置的对应关系）
+		用户可以多次输入选择，0代表退出，修改mOrder_Recorder容器中对应位置的记录的status
+		orf调用updateOrder()保存到文件
+
+
+12.
+
+SystemManageClass
+	
+	实现teacherSonMenu()
+		结构和studentSonMenu一致
+
+
+13.
+
+Teacher类
+	
+	实现showMenu()
+
+	实现show_all_Order()
+		和Student::show_all_Order()一样
+
+	实现checkOrder()
+		和Student::CancelOrder()的结构基本一样，只是增加输入审核是否通过修改mOrder_Recorder容器中记录的status的代码
